@@ -1,4 +1,4 @@
-# ReflectAI 🪞✨
+# ReflectAI ✨
 
 **Helping kids think before they type! 💡**
 
