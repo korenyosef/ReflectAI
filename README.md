@@ -49,7 +49,7 @@ ReflectAI is an intelligent background assistant designed to help children and y
    ```
 
 3. **Configure API Key:**
-   Open `main.py` and replace the `GROQ_API_KEY` in the `CONFIG` section with your actual key, or set it as an environment variable.
+   Open `.env.example`, change it's name to `.env` and change `gsk_` to your actual Groq API key.
 
 4. **Run the application:**
    _(Note: Keyboard hooks usually require Administrator/Root privileges on Windows/Linux)_
