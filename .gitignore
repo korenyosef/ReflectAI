@@ -1,5 +1,6 @@
 # PyCharm settings
 .idea/
+.vscode/
 
 # Python cache files
 __pycache__/
