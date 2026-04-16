@@ -132,9 +132,50 @@ class ReflectAIApp:
 
     def _label_text_options(self, text, limit):
         display_text = self._truncate_text(text, limit)
-        if self._is_hebrew_dominant(display_text):
-            return f"\u202b{display_text}\u202c", "right", "e"
+        if self._contains_hebrew(display_text):
+            return display_text, "right", "e"
         return display_text, "left", "w"
+
+    def _text_height_for(self, text, wrap_chars=48):
+        return max(1, min(3, (len(text) // wrap_chars) + 1))
+
+    def _add_readable_text(self, parent, text, display_font, bg, fg, wraplength, limit, pady=(4, 0)):
+        display_text, justify, anchor = self._label_text_options(text, limit)
+        if self._contains_hebrew(display_text):
+            text_widget = tk.Text(
+                parent,
+                height=self._text_height_for(display_text),
+                bg=bg,
+                fg=fg,
+                font=display_font,
+                wrap="word",
+                relief="flat",
+                bd=0,
+                padx=0,
+                pady=0,
+                highlightthickness=0,
+                cursor="arrow",
+                takefocus=False
+            )
+            text_widget.insert("1.0", display_text)
+            text_widget.tag_configure("rtl", justify="right")
+            text_widget.tag_add("rtl", "1.0", "end")
+            text_widget.configure(state="disabled")
+            text_widget.pack(anchor=anchor, fill="x", pady=pady)
+            return text_widget
+
+        label = tk.Label(
+            parent,
+            text=display_text,
+            font=display_font,
+            bg=bg,
+            fg=fg,
+            wraplength=wraplength,
+            justify=justify,
+            anchor=anchor
+        )
+        label.pack(anchor=anchor, fill="x", pady=pady)
+        return label
 
     def _contains_latin(self, text):
         return any(("a" <= char.lower() <= "z") for char in text)
@@ -384,20 +425,23 @@ class ReflectAIApp:
         progress.create_rectangle(0, 0, 360, 8, fill=CONFIG["SURFACE_ALT"], outline="")
         bar = progress.create_rectangle(0, 0, 92, 8, fill=CONFIG["THEME_COLOR"], outline="")
 
-        preview_text, preview_justify, preview_anchor = self._label_text_options(original_text, 120)
-        preview = tk.Label(
+        preview_frame = tk.Frame(
             shell,
-            text=preview_text,
-            font=self.small_font,
             bg=CONFIG["SURFACE_ALT"],
-            fg=CONFIG["MUTED_TEXT"],
-            wraplength=360,
-            justify=preview_justify,
-            anchor=preview_anchor,
             padx=12,
             pady=10
         )
-        preview.pack(anchor=preview_anchor, fill="x")
+        preview_frame.pack(fill="x")
+        self._add_readable_text(
+            preview_frame,
+            original_text,
+            self.small_font,
+            CONFIG["SURFACE_ALT"],
+            CONFIG["MUTED_TEXT"],
+            360,
+            120,
+            pady=(0, 0)
+        )
 
         def _animate(offset=0):
             window = self.loading_window
@@ -608,9 +652,6 @@ class ReflectAIApp:
         if self.popup_open:
             return
 
-        original_text, original_justify, original_anchor = self._label_text_options(intended_text, 110)
-        suggestion_text, suggestion_justify, suggestion_anchor = self._label_text_options(suggestion, 150)
-
         self.popup_open = True
         top = self._create_popup_window("ReflectAI - Pause & Think", 560, 440)
         shell = self._make_shell(top, padx=14, pady=14)
@@ -664,16 +705,15 @@ class ReflectAIApp:
             bg=CONFIG["DANGER_SOFT"],
             fg=CONFIG["DANGER_COLOR"]
         ).pack(anchor="w")
-        tk.Label(
+        self._add_readable_text(
             original_frame,
-            text=original_text,
-            font=self.small_font,
-            bg=CONFIG["DANGER_SOFT"],
-            fg=CONFIG["TEXT_COLOR"],
-            wraplength=410,
-            justify=original_justify,
-            anchor=original_anchor
-        ).pack(anchor=original_anchor, fill="x", pady=(4, 0))
+            intended_text,
+            self.small_font,
+            CONFIG["DANGER_SOFT"],
+            CONFIG["TEXT_COLOR"],
+            410,
+            110
+        )
 
         suggest_frame = tk.Frame(panel, bg=CONFIG["ACCENT_COLOR"], padx=14, pady=10)
         suggest_frame.pack(anchor="w", fill="x")
@@ -684,16 +724,16 @@ class ReflectAIApp:
             bg=CONFIG["ACCENT_COLOR"],
             fg=CONFIG["TEXT_COLOR"]
         ).pack(anchor="w")
-        tk.Label(
+        self._add_readable_text(
             suggest_frame,
-            text=suggestion_text,
-            font=self.suggest_font,
-            bg=CONFIG["ACCENT_COLOR"],
-            fg=CONFIG["TEXT_COLOR"],
-            wraplength=410,
-            justify=suggestion_justify,
-            anchor=suggestion_anchor
-        ).pack(anchor=suggestion_anchor, fill="x", pady=(5, 0))
+            suggestion,
+            self.suggest_font,
+            CONFIG["ACCENT_COLOR"],
+            CONFIG["TEXT_COLOR"],
+            410,
+            150,
+            pady=(5, 0)
+        )
 
         def _use_suggest():
             self.popup_open = False
